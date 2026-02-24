@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biriyanidibe | Premium Hub</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --primary: #00a86b; --bg: #f3f4f6; --white: #ffffff; --text: #1f2937; }
+        body { font-family: 'Hind Siliguri', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); display: flex; flex-direction: column; min-height: 100vh; }
+
+        /* Nav with Logo */
+        nav { background: var(--white); padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; box-shadow: 0 1px 10px rgba(0,0,0,0.05); }
+        .logo-container { display: flex; align-items: center; gap: 6px; }
+        .logo { font-size: 1.4rem; font-weight: 700; color: var(--primary); }
+        .logo span { color: #374151; }
+        .small-logo { width: 24px; height: 24px; object-fit: contain; }
+
+        .container { max-width: 480px; margin: auto; padding: 15px; flex: 1; }
+
+        /* Map Section */
+        .map-wrapper { background: var(--white); padding: 8px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        #map { height: 180px; width: 100%; border-radius: 18px; z-index: 1; }
+
+        /* Input Section */
+        .glass-input { background: var(--white); padding: 20px; border-radius: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.03); margin-bottom: 25px; border: 1px solid rgba(0,0,0,0.02); }
+        .input-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .input-header h3 { margin: 0; font-size: 1.1rem; opacity: 0.8; }
+        .refresh-btn { background: #f3f4f6; border: none; width: 35px; height: 35px; border-radius: 50%; color: var(--primary); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+        select, input { width: 100%; padding: 12px 15px; margin: 8px 0; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 0.95rem; outline: none; background: #f9fafb; box-sizing: border-box; }
+        .submit-btn { background: var(--primary); color: white; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+
+        /* Cards */
+        .mosque-card { background: var(--white); padding: 20px; border-radius: 22px; margin-bottom: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.02); border: 1px solid #f1f5f9; position: relative; }
+        .card-tag { position: absolute; top: 20px; right: 20px; background: #dcfce7; color: #166534; padding: 4px 10px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; }
+        .mosque-name { font-size: 1.15rem; font-weight: 700; margin: 0 0 8px 0; color: #111827; }
+        .food-text { font-size: 0.95rem; color: #4b5563; display: flex; align-items: center; gap: 8px; }
+        .dir-link { display: inline-block; margin-top: 15px; color: var(--primary); text-decoration: none; font-weight: 700; font-size: 0.9rem; }
+
+        /* Footer Section */
+        footer { text-align: center; padding: 30px; color: #9ca3af; font-size: 0.85rem; border-top: 1px solid #e5e7eb; background: var(--white); margin-top: 20px; }
+        .dev-name { color: var(--primary); font-weight: 700; display: block; margin-bottom: 10px; }
+        .social-links { display: flex; justify-content: center; gap: 20px; margin-top: 10px; }
+        .social-links a { color: #64748b; font-size: 1.4rem; transition: 0.3s; }
+        .social-links a:hover { color: var(--primary); transform: translateY(-3px); }
+
+        .biriyani-marker { font-size: 24px; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo-container">
+            <div class="logo">Biriyani<span>dibe</span></div>
+            <img src="https://cdn-icons-png.flaticon.com/512/5787/5787100.png" class="small-logo" alt="logo">
+        </div>
+        <i class="fas fa-ellipsis-v" style="color: #9ca3af;"></i>
+    </nav>
+
+    <div class="container">
+        <div class="map-wrapper">
+            <div id="map"></div>
+        </div>
+
+        <div class="glass-input">
+            <div class="input-header">
+                <h3><i class="fas fa-utensils"></i> মেনু আপডেট করুন</h3>
+                <button class="refresh-btn" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            
+            <select id="mosqueSelect">
+                <option value="সাতক্ষীরা কেন্দ্রীয় জামে মসজিদ" data-lat="22.7102" data-lon="89.0715">সাতক্ষীরা কেন্দ্রীয় জামে মসজিদ</option>
+                <option value="সাতক্ষীরা সরকারি কলেজ মসজিদ" data-lat="22.7188" data-lon="89.0705">সাতক্ষীরা সরকারি কলেজ মসজিদ</option>
+                <option value="পুরাতন বাজার জামে মসজিদ" data-lat="22.7065" data-lon="89.0755">পুরাতন বাজার জামে মসজিদ</option>
+                <option value="পলাশপোল কেন্দ্রীয় মসজিদ" data-lat="22.7155" data-lon="89.0688">পলাশপোল কেন্দ্রীয় মসজিদ</option>
+                <option value="সুলতানপুর বড় মসজিদ" data-lat="22.7022" data-lon="89.0788">সুলতানপুর বড় মসজিদ</option>
+            </select>
+            <input type="text" id="foodMenu" placeholder="আজ কী বিরিয়ানি?">
+            <button class="submit-btn" onclick="postIftar()">পাবলিশ করুন</button>
+        </div>
+
+        <div id="updateList"></div>
+    </div>
+
+    <footer>
+        <span class="dev-name">Developer SAKIB</span>
+        <div>© 2026 | All Rights Reserved</div>
+        <div class="social-links">
+            <a href="https://facebook.com/sakib" target="_blank"><i class="fab fa-facebook"></i></a>
+            <a href="https://github.com/sakib" target="_blank"><i class="fab fa-github"></i></a>
+        </div>
+    </footer>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqP9zVb_Nz9eKE5MCqKgNhCBLAe1ya5bs",
+            databaseURL: "https://satkhira-iftary-default-rtdb.firebaseio.com",
+            projectId: "satkhira-iftary",
+            appId: "1:58587509961:web:f855940e4bb125af6cc918"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        
+        let map, markers = L.layerGroup();
+
+        function init() {
+            map = L.map('map', {zoomControl: false}).setView([22.7133, 89.0722], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            markers.addTo(map);
+            map.locate({setView: true, maxZoom: 15});
+            loadPosts();
+        }
+
+        function postIftar() {
+            const sel = document.getElementById('mosqueSelect');
+            const food = document.getElementById('foodMenu').value;
+            if(!food) return alert("খাবারের নাম লিখুন!");
+            db.ref('iftar_posts').push({
+                name: sel.value, food: food,
+                lat: sel.options[sel.selectedIndex].dataset.lat,
+                lon: sel.options[sel.selectedIndex].dataset.lon,
+                time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            });
+            document.getElementById('foodMenu').value = '';
+        }
+
+        function loadPosts() {
+            db.ref('iftar_posts').on('value', (snap) => {
+                const list = document.getElementById('updateList');
+                list.innerHTML = '';
+                markers.clearLayers();
+                const data = snap.val();
+                if(data) {
+                    Object.values(data).reverse().forEach(item => {
+                        const icon = L.divIcon({
+                            html: `<div class="biriyani-marker">🍲</div>`,
+                            className: 'dummy', iconSize: [30, 30], iconAnchor: [15, 15]
+                        });
+                        L.marker([item.lat, item.lon], {icon: icon}).addTo(markers)
+                         .bindPopup(`<b>${item.name}</b><br>${item.food}`);
+
+                        list.innerHTML += `
+                            <div class="mosque-card">
+                                <span class="card-tag">LATEST</span>
+                                <h2 class="mosque-name">${item.name}</h2>
+                                <div class="food-text"><i class="fas fa-utensils" style="color:var(--primary)"></i> ${item.food}</div>
+                                <a href="http://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lon}" target="_blank" class="dir-link">লোকেশন দেখুন →</a>
+                            </div>`;
+                    });
+                }
+            });
+        }
+        window.onload = init;
+    </script>
+</body>
+</html>
